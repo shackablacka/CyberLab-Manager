@@ -1,18 +1,103 @@
-# This .gitignore is appropriate for repositories deployed to GitHub Pages and using
-# a Gemfile as specified at https://github.com/github/pages-gem#conventional
+# ==========================
+# Operating System
+# ==========================
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Basic Jekyll gitignores (synchronize to Jekyll.gitignore)
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
+# ==========================
+# Logs
+# ==========================
+logs/*
+*.log
 
-# Additional Ruby/bundler ignore for when you run: bundle install
-/vendor
+# Keep folder structure
+!logs/.gitkeep
 
-# Specific ignore for GitHub Pages
-# GitHub Pages will always use its own deployed version of pages-gem
-# This means GitHub Pages will NOT use your Gemfile.lock and therefore it is
-# counterproductive to check this file into the repository.
-# Details at https://github.com/github/pages-gem/issues/768
-Gemfile.lock
+# ==========================
+# Reports
+# ==========================
+reports/*
+!reports/.gitkeep
+
+# ==========================
+# Cache
+# ==========================
+cache/*
+!cache/.gitkeep
+
+# ==========================
+# Backups
+# ==========================
+backups/*
+!backups/.gitkeep
+
+# ==========================
+# Temporary Files
+# ==========================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# ==========================
+# Shell
+# ==========================
+*.out
+
+# ==========================
+# VS Code
+# ==========================
+.vscode/
+
+# ==========================
+# JetBrains
+# ==========================
+.idea/
+
+# ==========================
+# Node
+# ==========================
+node_modules/
+
+# ==========================
+# Build
+# ==========================
+dist/
+build/
+
+# ==========================
+# Coverage
+# ==========================
+coverage/
+.coverage
+
+# ==========================
+# Secrets
+# ==========================
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.kdbx
+
+# ==========================
+# Tool Data
+# ==========================
+tools/*/output/
+tools/*/reports/
