@@ -1,6 +1,12 @@
-NAME = "Blue Tool 21"
-DESCRIPTION = "Demonstration Blue Team script 21."
-ALLOWED_ROLES = ["admin", "instructor", "student"]
+from core.tool_runner import run_tool
+
+NAME = "Package Integrity (debsums)"
+DESCRIPTION = "Verify installed package file checksums (debsums)."
+ALLOWED_ROLES = ["admin", "instructor"]
+
 
 def run(username, role):
-    print(f"[Blue] 21 running for {username}")
+    print("[*] Verifying package file integrity with debsums...")
+    print("[*] This may take several minutes on a full system.\n")
+    run_tool("debsums", ["-a"], package="debsums")
+    print("\n[*] Tip: 'debsums -c' only reports changed files.")
