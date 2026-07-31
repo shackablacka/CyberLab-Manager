@@ -1,6 +1,12 @@
-NAME = "Red Tool 10"
-DESCRIPTION = "Demonstration Red Team script 10."
+from core.tool_runner import run_tool
+
+NAME = "Whois Lookup"
+DESCRIPTION = "Query domain registration records (whois)."
 ALLOWED_ROLES = ["admin", "instructor"]
 
+
 def run(username, role):
-    print(f"[Red] 10 running for {username}")
+    domain = input("Domain to look up: ").strip()
+    if not domain:
+        return
+    run_tool("whois", [domain], package="whois")

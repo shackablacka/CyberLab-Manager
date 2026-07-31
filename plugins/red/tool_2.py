@@ -1,6 +1,12 @@
-NAME = "Red Tool 2"
-DESCRIPTION = "Demonstration Red Team script 2."
+from core.tool_runner import run_tool
+
+NAME = "Service Detection"
+DESCRIPTION = "Detect service versions on open ports (nmap -sV)."
 ALLOWED_ROLES = ["admin", "instructor"]
 
+
 def run(username, role):
-    print(f"[Red] 2 running for {username}")
+    target = input("Target IP/host (lab only): ").strip()
+    if not target:
+        return
+    run_tool("nmap", ["-sV", target])
