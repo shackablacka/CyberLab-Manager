@@ -1,6 +1,12 @@
-NAME = "Red Tool 11"
-DESCRIPTION = "Demonstration Red Team script 11."
+from core.tool_runner import run_tool
+
+NAME = "SMB Share Enumerator"
+DESCRIPTION = "List shares on a lab Windows/Samba host (smbclient)."
 ALLOWED_ROLES = ["admin", "instructor"]
 
+
 def run(username, role):
-    print(f"[Red] 11 running for {username}")
+    target = input("Target IP (lab only): ").strip()
+    if not target:
+        return
+    run_tool("smbclient", ["-L", f"//{target}", "-N"], package="smbclient")
