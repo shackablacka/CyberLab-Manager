@@ -5,10 +5,10 @@ import logging
 from modules import (
     assets,
     attendance,
-    blue_team,
+    blueteam,
     borrowing,
     reports,
-    red_team,
+    redteam,
     setup,
     users,
 )
@@ -21,8 +21,8 @@ MENU_ITEMS = [
     ("Attendance", attendance.run, ["admin", "student", "instructor"]),
     ("Borrowing", borrowing.run, ["admin", "student", "instructor"]),
     ("Reports", reports.run, ["admin"]),
-    ("Red Team Tools", red_team.run, ["admin", "instructor"]),
-    ("Blue Team Tools", blue_team.run, ["admin", "instructor", "student"]),
+    ("Red Team Tools", redteam.run, ["admin", "instructor"]),
+    ("Blue Team Tools", blueteam.run, ["admin", "instructor", "student"]),
     ("Lab Setup", setup.run, ["admin"]),
 ]
 
