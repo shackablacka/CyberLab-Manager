@@ -1,62 +1,72 @@
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path("database/database.db")
-
-
-def get_connection():
-    """Return a connection to the SQLite database."""
-    return sqlite3.connect(DB_PATH)
-
+DATABASE = Path("database/database.db")
 
 def initialize_database():
-    """Create database tables if they don't exist."""
-    conn = get_connection()
+    DATABASE.parent.mkdir(parents=True, exist_ok=True)
+
+    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    # Existing users table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'student',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CHECK(role IN ('student', 'admin', 'instructor'))
+        )
+        """
     )
-    """)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS assets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        asset_tag TEXT UNIQUE NOT NULL,
-        asset_name TEXT NOT NULL,
-        category TEXT,
-        status TEXT DEFAULT 'Available',
-        location TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    # Assets table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS assets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            serial_number TEXT UNIQUE,
+            location TEXT,
+            status TEXT NOT NULL DEFAULT 'available'
+                CHECK(status IN ('available', 'borrowed', 'maintenance')),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
     )
-    """)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS borrow_records (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        asset_id INTEGER,
-        borrower TEXT,
-        borrowed_date TEXT,
-        returned_date TEXT,
-        status TEXT,
-        FOREIGN KEY(asset_id) REFERENCES assets(id)
+    # Attendance table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS attendance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            check_in TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            check_out TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """
     )
-    """)
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS attendance (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_name TEXT,
-        class_name TEXT,
-        date TEXT,
-        status TEXT
+    # Borrowing table
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS borrowings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            asset_id INTEGER NOT NULL,
+            borrow_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            due_date TEXT NOT NULL,
+            return_date TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        )
+        """
     )
-    """)
 
     conn.commit()
     conn.close()

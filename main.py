@@ -1,12 +1,13 @@
 import getpass
+import logging
 import secrets
 import string
 
 from core.logger import setup_logger
 from core.database import initialize_database
 from core.auth import create_user, authenticate, user_exists
+from core.menu import run_dashboard
 
-# Single logger for the whole app
 log = setup_logger()
 
 
@@ -44,24 +45,32 @@ def login():
     print("\n====== LOGIN ======\n")
 
     username = input("Username: ").strip()
-    password = getpass.getpass("Password: ").strip()
+    password = getpass.getpass("Password: ")
 
     success, role = authenticate(username, password)
 
     if success:
-        log.info(f"Successful login: {username} (role={role})")
+        log.info("Successful login: %s (role=%s)", username, role)
         print(f"\nWelcome {username}!")
         print(f"Role: {role}")
-    else:
-        log.warning(f"Failed login attempt: {username}")
-        print("\nInvalid username or password.")
+        return username, role
+
+    log.warning("Failed login attempt: %s", username)
+    print("\nInvalid username or password.")
+    return None, None
 
 
 def main():
     log.info("CyberLab-Manager starting up.")
     initialize_database()
     create_default_admin()
-    login()
+
+    user, role = login()
+
+    if user:
+        run_dashboard(user, role)
+    else:
+        log.warning("Login failed, exiting.")
 
 
 if __name__ == "__main__":
