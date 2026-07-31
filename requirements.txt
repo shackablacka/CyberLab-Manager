@@ -28,7 +28,7 @@ prompt-toolkit==1.0.14
 pydantic==2.13.4
 pydantic_core==2.46.4
 pyfiglet==1.0.4
-Pygments==2.19.2
+Pygments==2.20.0
 PyInquirer==1.0.3
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
