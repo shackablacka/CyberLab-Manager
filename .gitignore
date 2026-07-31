@@ -102,3 +102,12 @@ coverage/
 tools/*/output/
 tools/*/reports/
 
+
+# ==========================
+# Database
+# ==========================
+database/*
+!database/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
