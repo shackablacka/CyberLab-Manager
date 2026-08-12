@@ -5,14 +5,15 @@ import logging
 import pkgutil
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
+
+from core.audit import log_tool_use
 
 log = logging.getLogger("cyberlab.loader")
 
 
-def load_plugins(category: str) -> Dict[str, Dict[str, Any]]:
-    """Discover and load plugins from plugins/<category>/."""
-    plugins = {}
+def load_plugins(category: str) -> dict[str, dict[str, Any]]:
+    plugins: dict[str, dict[str, Any]] = {}
     package_path = Path("plugins") / category
 
     if not package_path.exists():
@@ -34,10 +35,6 @@ def load_plugins(category: str) -> Dict[str, Dict[str, Any]]:
 
             try:
                 module = importlib.import_module(full_module_name)
-
-                name = getattr(module, "NAME", module_name.replace("_", " ").title())
-                description = getattr(module, "DESCRIPTION", "No description provided.")
-                allowed_roles = getattr(module, "ALLOWED_ROLES", ["admin", "instructor"])
                 run_func = getattr(module, "run", None)
 
                 if not callable(run_func):
@@ -45,13 +42,25 @@ def load_plugins(category: str) -> Dict[str, Dict[str, Any]]:
                     continue
 
                 plugins[module_name] = {
-                    "name": name,
-                    "description": description,
-                    "allowed_roles": allowed_roles,
+                    "name": getattr(
+                        module,
+                        "NAME",
+                        module_name.replace("_", " ").title(),
+                    ),
+                    "description": getattr(
+                        module,
+                        "DESCRIPTION",
+                        "No description provided.",
+                    ),
+                    "allowed_roles": getattr(
+                        module,
+                        "ALLOWED_ROLES",
+                        ["admin", "instructor"],
+                    ),
                     "run": run_func,
                 }
-            except Exception as e:
-                log.error("Failed to load %s: %s", module_name, e, exc_info=True)
+            except Exception as exc:
+                log.error("Failed to load %s: %s", module_name, exc, exc_info=True)
     finally:
         if sys_path_added:
             sys.path.remove(package_dir)
@@ -60,44 +69,56 @@ def load_plugins(category: str) -> Dict[str, Dict[str, Any]]:
 
 
 def run_plugin_menu(category: str, username: str, role: str) -> None:
-    """Display the menu and dispatch user choices."""
     while True:
         plugins = load_plugins(category)
-        authorized = {k: v for k, v in plugins.items() if role in v["allowed_roles"]}
+        authorized = {
+            key: plugin
+            for key, plugin in plugins.items()
+            if role in plugin["allowed_roles"]
+        }
 
         print(f"\n=== {category.upper()} TEAM PLUGINS ===")
+        print(f"Available: {len(authorized)}")
+
         if not authorized:
             print("No authorized plugins available for your role.")
-            print("0. Back")
             input("\nPress Enter to return...")
             return
 
-        sorted_keys = sorted(authorized.keys(), key=lambda x: authorized[x]["name"])
+        sorted_keys = sorted(
+            authorized.keys(),
+            key=lambda key: authorized[key]["name"].lower(),
+        )
 
-        for i, key in enumerate(sorted_keys, 1):
+        for index, key in enumerate(sorted_keys, 1):
             plugin = authorized[key]
-            print(f"{i:2d}. {plugin['name']:<30} - {plugin['description']}")
+            print(f"{index:2d}. {plugin['name']:<32} {plugin['description']}")
         print(" 0. Back to Main Menu")
 
         choice = input("\nSelect plugin to execute: ").strip()
-
         if choice == "0":
             return
 
-        try:
-            index = int(choice) - 1
-            if 0 <= index < len(sorted_keys):
-                key = sorted_keys[index]
-                plugin = authorized[key]
-                log.info("User %s executing %s plugin: %s", username, category, plugin["name"])
-                print(f"\n--- Running: {plugin['name']} ---")
-                try:
-                    plugin["run"](username, role)
-                except Exception as e:
-                    print(f"[!] Plugin error: {e}")
-                    log.error("Plugin %s failed", key, exc_info=True)
-                input("\nPress Enter to continue...")
-            else:
-                print("[!] Invalid option.")
-        except ValueError:
+        if not choice.isdigit():
             print("[!] Please enter a number.")
+            continue
+
+        index = int(choice) - 1
+        if not 0 <= index < len(sorted_keys):
+            print("[!] Invalid option.")
+            continue
+
+        key = sorted_keys[index]
+        plugin = authorized[key]
+        print(f"\n--- Running: {plugin['name']} ---")
+        status = "ok"
+
+        try:
+            plugin["run"](username, role)
+        except Exception as exc:
+            status = "error"
+            print(f"[!] Plugin error: {exc}")
+            log.error("Plugin %s failed", key, exc_info=True)
+
+        log_tool_use(username, role, category, plugin["name"], status)
+        input("\nPress Enter to continue...")

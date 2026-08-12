@@ -1,14 +1,20 @@
 """Role-aware CyberLab-Manager dashboard."""
 
 import logging
+import shutil
+from datetime import datetime
+from pathlib import Path
 
+from core.loader import load_plugins
 from modules import (
     assets,
     attendance,
     blueteam,
     borrowing,
-    reports,
+    catalog,
+    purpleteam,
     redteam,
+    reports,
     setup,
     users,
 )
@@ -23,14 +29,45 @@ MENU_ITEMS = [
     ("Reports", reports.run, ["admin"]),
     ("Red Team Tools", redteam.run, ["admin", "instructor"]),
     ("Blue Team Tools", blueteam.run, ["admin", "instructor", "student"]),
+    ("Purple Team Exercises", purpleteam.run, ["admin", "instructor"]),
+    ("Tool Catalog", catalog.run, ["admin", "instructor", "student"]),
     ("Lab Setup", setup.run, ["admin"]),
 ]
 
 
+def _plugin_counts(role: str) -> tuple[int, int]:
+    red = sum(1 for p in load_plugins("red").values() if role in p["allowed_roles"])
+    blue = sum(1 for p in load_plugins("blue").values() if role in p["allowed_roles"])
+    return red, blue
+
+
+def _print_banner(username: str, role: str) -> None:
+    now = datetime.now()
+    red_count, blue_count = _plugin_counts(role)
+    db_ok = Path("database/database.db").exists()
+    disk = shutil.disk_usage(".")
+    free_gb = disk.free / (1024 ** 3)
+
+    print("\n" + "=" * 58)
+    print("  CyberLab-Manager")
+    print("  Red / Blue / Purple laboratory control center")
+    print("=" * 58)
+    print(f"  User : {username}")
+    print(f"  Role : {role}")
+    print(f"  Time : {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"  Tools: {red_count} red  |  {blue_count} blue")
+    print(f"  DB   : {'ready' if db_ok else 'missing'}")
+    print(f"  Disk : {free_gb:.1f} GB free")
+
+    if now.year >= 2026:
+        print("  [!] System clock looks wrong. Run: timedatectl set-ntp true")
+    print("=" * 58)
+
+
 def run_dashboard(username: str, role: str) -> None:
     while True:
-        print("\n=== CyberLab-Manager Dashboard ===")
-        print(f"User: {username} | Role: {role}\n")
+        _print_banner(username, role)
+        print()
 
         available = [
             (title, function)
@@ -40,7 +77,6 @@ def run_dashboard(username: str, role: str) -> None:
 
         for number, (title, _) in enumerate(available, start=1):
             print(f"{number}. {title}")
-
         print("0. Logout")
 
         choice = input("\nSelect option: ").strip()
@@ -55,7 +91,6 @@ def run_dashboard(username: str, role: str) -> None:
             continue
 
         index = int(choice) - 1
-
         if not 0 <= index < len(available):
             print("[!] Invalid option.")
             continue
@@ -67,4 +102,4 @@ def run_dashboard(username: str, role: str) -> None:
             function(username, role)
         except Exception:
             log.exception("Module failed: %s", title)
-            print("[!] Module failed. Check the log for details.")
+            print("[!] Module failed. Check logs/cyberlab.log.")
